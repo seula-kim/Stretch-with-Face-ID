@@ -131,21 +131,8 @@ function setStatus(text) {
   statusEl.textContent = text;
   statusEl.classList.add("is-enter");
   if (DISTANCE_STATUS.has(text)) {
-    playSound(statusSoundEl);
+    playNamed("status");
   }
-}
-
-function formatStatusTime(date) {
-  const hours = date.getHours();
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  return `${hours}:${minutes}`;
-}
-
-function updateStatusTime() {
-  const time = formatStatusTime(new Date());
-  document.querySelectorAll(".status-time").forEach((el) => {
-    el.textContent = time;
-  });
 }
 
 function shuffle(list) {
@@ -337,39 +324,110 @@ function playSound(audioEl) {
   }
 }
 
-const deleteAudioCtx = new AudioContext();
-let deleteBuffer = null;
+const SOUND_ELEMENTS = {
+  unlock: unlockSoundEl,
+  nod: nodSoundEl,
+  delete: deleteSoundEl,
+  locked: lockedSoundEl,
+  status: statusSoundEl,
+};
 const DELETE_START = 0.006;
+let audioCtx = null;
+const soundBuffers = {};
+let soundsLoading = false;
 
-fetch("Keyboard Delete.wav")
-  .then((res) => res.arrayBuffer())
-  .then((data) => deleteAudioCtx.decodeAudioData(data))
-  .then((buffer) => {
-    deleteBuffer = buffer;
-  })
-  .catch(() => {});
+function audioSource(audioEl) {
+  if (!audioEl) return "";
+  const source = audioEl.querySelector("source");
+  return audioEl.currentSrc || audioEl.getAttribute("src") || source?.getAttribute("src") || "";
+}
 
-function playDeleteSound() {
-  const start = () => {
-    if (!deleteBuffer) {
-      playSound(deleteSoundEl);
-      return;
+function primeAudio(audioEl) {
+  if (!audioEl || audioEl.dataset.primed === "1") return;
+  audioEl.dataset.primed = "1";
+  audioEl.muted = true;
+  const play = audioEl.play();
+  const finish = () => {
+    audioEl.pause();
+    try {
+      audioEl.currentTime = 0;
+    } catch {
+      /* ignore */
     }
-    const source = deleteAudioCtx.createBufferSource();
-    source.buffer = deleteBuffer;
-    source.connect(deleteAudioCtx.destination);
-    const offset = Math.min(DELETE_START, Math.max(0, deleteBuffer.duration - 0.02));
-    source.start(0, offset);
+    audioEl.muted = false;
   };
-  if (deleteAudioCtx.state === "suspended") {
-    deleteAudioCtx.resume().then(start).catch(start);
+  if (play && typeof play.then === "function") {
+    play.then(finish).catch(() => {
+      audioEl.muted = false;
+    });
+  } else {
+    finish();
+  }
+}
+
+function unlockAudio(exceptEl) {
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (Ctx && !audioCtx) audioCtx = new Ctx();
+  if (audioCtx && audioCtx.state === "suspended") {
+    audioCtx.resume().catch(() => {});
+  }
+  if (audioCtx) {
+    try {
+      const silent = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
+      const blip = audioCtx.createBufferSource();
+      blip.buffer = silent;
+      blip.connect(audioCtx.destination);
+      blip.start(0);
+    } catch {
+      /* ignore */
+    }
+  }
+  Object.values(SOUND_ELEMENTS).forEach((audioEl) => {
+    if (audioEl && audioEl !== exceptEl) primeAudio(audioEl);
+  });
+  if (!soundsLoading && audioCtx) {
+    soundsLoading = true;
+    Object.entries(SOUND_ELEMENTS).forEach(([id, audioEl]) => {
+      const src = audioSource(audioEl);
+      if (!src) return;
+      fetch(src)
+        .then((res) => res.arrayBuffer())
+        .then((data) => audioCtx.decodeAudioData(data))
+        .then((buffer) => {
+          soundBuffers[id] = buffer;
+        })
+        .catch(() => {});
+    });
+  }
+}
+
+function playNamed(id, offset = 0) {
+  const audioEl = SOUND_ELEMENTS[id];
+  const buffer = soundBuffers[id];
+  if (!audioCtx || !buffer) {
+    playSound(audioEl);
+    return;
+  }
+  const start = () => {
+    const source = audioCtx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioCtx.destination);
+    const at = Math.min(offset, Math.max(0, buffer.duration - 0.02));
+    source.start(0, at);
+  };
+  if (audioCtx.state === "suspended") {
+    audioCtx.resume().then(start).catch(() => playSound(audioEl));
     return;
   }
   start();
 }
 
+function playDeleteSound() {
+  playNamed("delete", DELETE_START);
+}
+
 function playLockedSound() {
-  playSound(lockedSoundEl);
+  playNamed("locked");
 }
 
 function advancePose() {
@@ -508,11 +566,11 @@ function stopCameraAndTracking() {
 }
 
 function playUnlockSound() {
-  playSound(unlockSoundEl);
+  playNamed("unlock");
 }
 
 function playNodSound() {
-  playSound(nodSoundEl);
+  playNamed("nod");
 }
 
 function clearCompleteTimers() {
@@ -583,9 +641,38 @@ if (faceMotionEl) {
   });
 }
 
-updateStatusTime();
-setInterval(updateStatusTime, 1000);
 syncFaceMotion("screen-1");
+
+document.addEventListener(
+  "touchmove",
+  (event) => {
+    event.preventDefault();
+  },
+  { passive: false }
+);
+
+function lockPageSize() {
+  const device = document.querySelector(".device");
+  if (window.innerWidth > 430) {
+    document.documentElement.style.height = "";
+    document.body.style.height = "";
+    if (device) device.style.height = "";
+    return;
+  }
+  const viewport = window.visualViewport;
+  const height = Math.round(viewport ? viewport.height : window.innerHeight);
+  document.documentElement.style.height = `${height}px`;
+  document.body.style.height = `${height}px`;
+  if (device) device.style.height = `${height}px`;
+  window.scrollTo(0, 0);
+}
+
+lockPageSize();
+window.addEventListener("resize", lockPageSize);
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", lockPageSize);
+  window.visualViewport.addEventListener("scroll", lockPageSize);
+}
 
 function bindCtaHover(button) {
   if (!button) return;
@@ -605,6 +692,7 @@ bindCtaHover(onboardingCta);
 let startDeletePlayed = false;
 onboardingCta.addEventListener("pointerdown", () => {
   startDeletePlayed = true;
+  unlockAudio(deleteSoundEl);
   playDeleteSound();
 });
 onboardingCta.addEventListener("click", (event) => {
@@ -618,6 +706,7 @@ onboardingCta.addEventListener("click", (event) => {
 const completeHomeButton = document.getElementById("complete-home");
 bindCtaHover(completeHomeButton);
 completeHomeButton.addEventListener("pointerdown", () => {
+  unlockAudio(deleteSoundEl);
   playDeleteSound();
 });
 completeHomeButton.addEventListener("click", (event) => {

@@ -31,21 +31,26 @@
 
 html,
 body {
-  min-height: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 body {
+  position: fixed;
+  inset: 0;
+  width: 100%;
   font-family: Pretendard, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
   background: #d9d9d9;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
+  touch-action: manipulation;
 }
 
 .device {
-  width: min(100vw, var(--device-width));
-  height: min(100vh, var(--device-height));
+  width: min(100%, var(--device-width));
+  height: min(100%, var(--device-height));
   background: var(--bg);
   overflow: hidden;
   position: relative;
@@ -72,42 +77,6 @@ body {
 #screen-1 {
   -webkit-tap-highlight-color: transparent;
   user-select: none;
-}
-
-.status-bar {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 20;
-  height: 54px;
-  padding: 14px var(--page-margin) 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: #ffffff;
-  pointer-events: none;
-}
-
-.status-time {
-  margin-left: 0;
-  font-family: "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: -0.4px;
-  color: #ffffff;
-}
-
-.status-icons {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.status-icons img {
-  display: block;
-  height: 13px;
-  width: auto;
 }
 
 .onboarding-body {
@@ -502,11 +471,13 @@ body {
 @media (max-width: 430px) {
   body {
     background: var(--bg);
+    height: 100svh;
+    max-height: 100svh;
   }
 
   .device {
-    width: 100vw;
-    height: 100vh;
-    height: 100dvh;
+    width: 100%;
+    height: 100%;
+    max-height: 100svh;
   }
 }
