@@ -21,6 +21,8 @@
   --device-width: 390px;
   --device-height: 844px;
   --page-margin: 40px;
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
 }
 
 * {
@@ -473,8 +475,8 @@ body {
 @media (max-width: 430px) {
   body {
     background: #000000;
-    height: 100svh;
-    max-height: 100svh;
+    height: 100lvh;
+    max-height: none;
   }
 
   #screen-2 {
@@ -485,17 +487,19 @@ body {
     position: fixed;
     left: 0;
     right: 0;
-    top: calc(-1 * env(safe-area-inset-top, 0px));
-    bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
+    top: calc(-1 * var(--sat));
+    bottom: auto;
     width: 100%;
-    height: auto;
-    min-height: calc(100lvh + env(safe-area-inset-top, 0px));
-    background: transparent;
+    height: calc(100lvh + var(--sat) + var(--sab));
+    min-height: calc(100% + var(--sat) + var(--sab));
+    object-fit: cover;
+    background: #000000;
   }
 
   .device {
     width: 100%;
     height: 100%;
-    max-height: 100svh;
+    min-height: 100lvh;
+    max-height: none;
   }
 }

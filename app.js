@@ -133,7 +133,7 @@ function setStatus(text) {
   statusEl.textContent = text;
   statusEl.classList.add("is-enter");
   if (DISTANCE_STATUS.has(text)) {
-    playNamed("status");
+    playSound(statusSoundEl);
   }
 }
 
@@ -314,6 +314,9 @@ function resetUnlockSequence() {
 
 function playSound(audioEl) {
   if (!audioEl) return;
+  holdSound.add(audioEl);
+  audioEl.muted = false;
+  audioEl.volume = 1;
   try {
     audioEl.pause();
     audioEl.currentTime = 0;
@@ -326,110 +329,40 @@ function playSound(audioEl) {
   }
 }
 
-const SOUND_ELEMENTS = {
-  unlock: unlockSoundEl,
-  nod: nodSoundEl,
-  delete: deleteSoundEl,
-  locked: lockedSoundEl,
-  status: statusSoundEl,
-};
-const DELETE_START = 0.006;
-let audioCtx = null;
-const soundBuffers = {};
-let soundsLoading = false;
+const SOUND_ELEMENTS = [unlockSoundEl, nodSoundEl, deleteSoundEl, lockedSoundEl, statusSoundEl];
 
-function audioSource(audioEl) {
-  if (!audioEl) return "";
-  const source = audioEl.querySelector("source");
-  return audioEl.currentSrc || audioEl.getAttribute("src") || source?.getAttribute("src") || "";
-}
-
-function primeAudio(audioEl) {
-  if (!audioEl || audioEl.dataset.primed === "1") return;
-  audioEl.dataset.primed = "1";
-  audioEl.muted = true;
-  const play = audioEl.play();
-  const finish = () => {
-    audioEl.pause();
-    try {
-      audioEl.currentTime = 0;
-    } catch {
-      /* ignore */
-    }
-    audioEl.muted = false;
-  };
-  if (play && typeof play.then === "function") {
-    play.then(finish).catch(() => {
-      audioEl.muted = false;
-    });
-  } else {
-    finish();
-  }
-}
+const holdSound = new Set();
 
 function unlockAudio(exceptEl) {
-  const Ctx = window.AudioContext || window.webkitAudioContext;
-  if (Ctx && !audioCtx) audioCtx = new Ctx();
-  if (audioCtx && audioCtx.state === "suspended") {
-    audioCtx.resume().catch(() => {});
-  }
-  if (audioCtx) {
-    try {
-      const silent = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
-      const blip = audioCtx.createBufferSource();
-      blip.buffer = silent;
-      blip.connect(audioCtx.destination);
-      blip.start(0);
-    } catch {
-      /* ignore */
-    }
-  }
-  Object.values(SOUND_ELEMENTS).forEach((audioEl) => {
-    if (audioEl && audioEl !== exceptEl) primeAudio(audioEl);
-  });
-  if (!soundsLoading && audioCtx) {
-    soundsLoading = true;
-    Object.entries(SOUND_ELEMENTS).forEach(([id, audioEl]) => {
-      const src = audioSource(audioEl);
-      if (!src) return;
-      fetch(src)
-        .then((res) => res.arrayBuffer())
-        .then((data) => audioCtx.decodeAudioData(data))
-        .then((buffer) => {
-          soundBuffers[id] = buffer;
+  SOUND_ELEMENTS.forEach((audioEl) => {
+    if (!audioEl || audioEl === exceptEl) return;
+    audioEl.muted = false;
+    audioEl.volume = 1;
+    const play = audioEl.play();
+    if (play && typeof play.then === "function") {
+      play
+        .then(() => {
+          window.setTimeout(() => {
+            if (holdSound.has(audioEl)) return;
+            audioEl.pause();
+            try {
+              audioEl.currentTime = 0;
+            } catch {
+              /* ignore */
+            }
+          }, 160);
         })
         .catch(() => {});
-    });
-  }
-}
-
-function playNamed(id, offset = 0) {
-  const audioEl = SOUND_ELEMENTS[id];
-  const buffer = soundBuffers[id];
-  if (!audioCtx || !buffer) {
-    playSound(audioEl);
-    return;
-  }
-  const start = () => {
-    const source = audioCtx.createBufferSource();
-    source.buffer = buffer;
-    source.connect(audioCtx.destination);
-    const at = Math.min(offset, Math.max(0, buffer.duration - 0.02));
-    source.start(0, at);
-  };
-  if (audioCtx.state === "suspended") {
-    audioCtx.resume().then(start).catch(() => playSound(audioEl));
-    return;
-  }
-  start();
+    }
+  });
 }
 
 function playDeleteSound() {
-  playNamed("delete", DELETE_START);
+  playSound(deleteSoundEl);
 }
 
 function playLockedSound() {
-  playNamed("locked");
+  playSound(lockedSoundEl);
 }
 
 function advancePose() {
@@ -583,11 +516,11 @@ function stopCameraAndTracking() {
 }
 
 function playUnlockSound() {
-  playNamed("unlock");
+  playSound(unlockSoundEl);
 }
 
 function playNodSound() {
-  playNamed("nod");
+  playSound(nodSoundEl);
 }
 
 function clearCompleteTimers() {
@@ -673,17 +606,30 @@ document.addEventListener(
 
 function lockPageSize() {
   const device = document.querySelector(".device");
+  const webcam = document.getElementById("webcam");
   if (window.innerWidth > 430) {
     document.documentElement.style.height = "";
     document.body.style.height = "";
     if (device) device.style.height = "";
+    if (webcam) {
+      webcam.style.top = "";
+      webcam.style.height = "";
+      webcam.style.width = "";
+    }
     return;
   }
-  const viewport = window.visualViewport;
-  const height = Math.round(viewport ? viewport.height : window.innerHeight);
+  const height = window.innerHeight;
   document.documentElement.style.height = `${height}px`;
   document.body.style.height = `${height}px`;
   if (device) device.style.height = `${height}px`;
+  if (webcam) {
+    const styles = getComputedStyle(document.documentElement);
+    const top = Number.parseFloat(styles.getPropertyValue("--sat")) || 0;
+    const bottom = Number.parseFloat(styles.getPropertyValue("--sab")) || 0;
+    webcam.style.top = `${-top}px`;
+    webcam.style.height = `${height + top + bottom}px`;
+    webcam.style.width = "100%";
+  }
   window.scrollTo(0, 0);
 }
 
