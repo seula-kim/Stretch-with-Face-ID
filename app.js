@@ -96,6 +96,8 @@ let farFrames = 0;
 let closeFrames = 0;
 let shownStatus = "";
 let stretchCount = Number(localStorage.getItem("stretchCount") || 0);
+let attemptTimer = 0;
+const ATTEMPT_LIMIT_MS = 60000;
 let completeTimer = 0;
 let completeCopyTimer = 0;
 let completeTitleTimer = 0;
@@ -541,6 +543,19 @@ function playUnlockLock() {
   }, 1000);
 }
 
+function clearAttemptTimer() {
+  window.clearTimeout(attemptTimer);
+  attemptTimer = 0;
+}
+
+function startAttemptTimer() {
+  clearAttemptTimer();
+  attemptTimer = window.setTimeout(() => {
+    attemptTimer = 0;
+    goToOnboarding();
+  }, ATTEMPT_LIMIT_MS);
+}
+
 function showScreen(id) {
   document.querySelectorAll(".screen").forEach((screen) => {
     screen.classList.toggle("is-active", screen.id === id);
@@ -550,7 +565,9 @@ function showScreen(id) {
     showClosedLock();
     resetUnlockSequence();
     startCameraAndTracking();
+    startAttemptTimer();
   } else if (id !== "screen-3") {
+    clearAttemptTimer();
     resetLockIcon();
   }
 }
@@ -583,7 +600,9 @@ function clearCompleteTimers() {
 }
 
 function goToOnboarding() {
+  clearAttemptTimer();
   clearCompleteTimers();
+  stopCameraAndTracking();
   resetLockIcon();
   if (completeProgressEl) {
     completeProgressEl.classList.remove("is-running");
@@ -593,6 +612,7 @@ function goToOnboarding() {
 }
 
 function startCompleteScreen() {
+  clearAttemptTimer();
   stopCameraAndTracking();
   stretchCount += 1;
   localStorage.setItem("stretchCount", String(stretchCount));
@@ -619,7 +639,7 @@ function startCompleteScreen() {
     if (completeTitleEl) {
       completeTitleEl.classList.remove("is-enter");
       void completeTitleEl.offsetWidth;
-      completeTitleEl.textContent = "거북목 예방도 완료!";
+      completeTitleEl.textContent = "거북목 예방 실천도 완료!";
       completeTitleEl.classList.add("is-enter");
     }
     if (completeCopyEl) {

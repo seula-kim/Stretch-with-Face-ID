@@ -161,6 +161,7 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center center;
   transform: scaleX(-1);
   background: #000000;
   opacity: 1;
@@ -175,7 +176,7 @@ body {
 .lock-icon {
   --lock-size: 12.8px;
   position: absolute;
-  top: 68px;
+  top: 48px;
   left: 50%;
   z-index: 12;
   width: var(--lock-size);
@@ -237,7 +238,7 @@ body {
 
 .test-title {
   position: absolute;
-  top: 127px;
+  top: 107px;
   left: 0;
   right: 0;
   width: 100%;
@@ -262,7 +263,7 @@ body {
 
 .pin-dots {
   position: absolute;
-  top: 224px;
+  top: 204px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -324,6 +325,7 @@ body {
   width: 100%;
   height: 100%;
   overflow: visible;
+  transform: translateY(-20px);
   filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.22));
 }
 
@@ -470,9 +472,25 @@ body {
 
 @media (max-width: 430px) {
   body {
-    background: var(--bg);
+    background: #000000;
     height: 100svh;
     max-height: 100svh;
+  }
+
+  #screen-2 {
+    background: transparent;
+  }
+
+  .webcam {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: calc(-1 * env(safe-area-inset-top, 0px));
+    bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
+    width: 100%;
+    height: auto;
+    min-height: calc(100lvh + env(safe-area-inset-top, 0px));
+    background: transparent;
   }
 
   .device {
