@@ -178,7 +178,7 @@ body {
 .lock-icon {
   --lock-size: 12.8px;
   position: absolute;
-  top: 48px;
+  top: 58px;
   left: 50%;
   z-index: 12;
   width: var(--lock-size);

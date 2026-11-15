@@ -337,22 +337,25 @@ function unlockAudio(exceptEl) {
   SOUND_ELEMENTS.forEach((audioEl) => {
     if (!audioEl || audioEl === exceptEl) return;
     audioEl.muted = false;
-    audioEl.volume = 1;
+    audioEl.volume = 0;
     const play = audioEl.play();
+    const finish = () => {
+      if (!holdSound.has(audioEl)) {
+        audioEl.pause();
+        try {
+          audioEl.currentTime = 0;
+        } catch {
+          /* ignore */
+        }
+      }
+      if (!holdSound.has(audioEl)) audioEl.volume = 1;
+    };
     if (play && typeof play.then === "function") {
-      play
-        .then(() => {
-          window.setTimeout(() => {
-            if (holdSound.has(audioEl)) return;
-            audioEl.pause();
-            try {
-              audioEl.currentTime = 0;
-            } catch {
-              /* ignore */
-            }
-          }, 160);
-        })
-        .catch(() => {});
+      play.then(() => window.setTimeout(finish, 40)).catch(() => {
+        audioEl.volume = 1;
+      });
+    } else {
+      finish();
     }
   });
 }
