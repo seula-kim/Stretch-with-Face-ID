@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Stretch with Face ID</title>
+    <link rel="preload" href="fonts/Archivo-variable.ttf" as="font" type="font/ttf" />
+    <link rel="preload" href="fonts/LINESeedSansKR-Rg.woff2" as="font" type="font/woff2" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="device">
+      <header class="status-bar">
+        <span class="status-time">9:41</span>
+        <span class="status-icons" aria-hidden="true">
+          <img src="Cellular%20Connection.png" alt="" width="20" height="13" />
+          <img src="Wifi.png" alt="" width="18" height="13" />
+          <img src="Battery.png" alt="" width="28" height="13" />
+        </span>
+      </header>
+
+      <div class="lock-icon" id="lock-icon" aria-hidden="true">
+        <svg class="lock-svg" viewBox="0 0 401 582" width="12.8" height="18.6" overflow="visible" aria-hidden="true">
+          <rect class="lock-body" x="0" y="240" width="401" height="342" rx="54" fill="#ffffff" />
+          <g class="lock-shackle">
+            <path
+              d="M76.0 390 V152.5 A124.5 124.5 0 0 1 325.0 152.5 V248"
+              fill="none"
+              stroke="#ffffff"
+              stroke-width="56"
+              stroke-linecap="butt"
+            />
+          </g>
+        </svg>
+      </div>
+
+      <section class="screen is-active" id="screen-1">
+        <div class="onboarding-body">
+          <h1 class="app-title">Stretch with Face ID</h1>
+          <video
+            class="face-motion-source"
+            id="face-motion"
+            src="face_motion.mp4"
+            autoplay
+            muted
+            loop
+            playsinline
+            preload="auto"
+          ></video>
+          <canvas class="face-motion" id="face-motion-canvas" aria-hidden="true"></canvas>
+          <button class="cta-button" id="onboarding-cta" type="button">Face ID 시작하기</button>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-2">
+        <video class="webcam" id="webcam" autoplay playsinline muted></video>
+        <div class="test-screen">
+          <h2 class="test-title" id="test-title">고개를 왼쪽으로<br />90º 돌려주세요</h2>
+          <div class="pin-dots" id="pin-dots" aria-label="6자리 암호">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="pose-graphic" id="pose-graphic" aria-hidden="true"></div>
+          <p class="track-status" id="track-status">인식 준비 중</p>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-3">
+        <div class="complete-screen">
+          <h2 class="complete-title" id="complete-title"><span id="complete-title-text">잠금해제 완료!</span></h2>
+          <p class="complete-copy" id="complete-copy">
+            6개의 암호를 해제하며 거북목 예방을 위한<br />스트레칭을 1번 실천했어요.
+          </p>
+          <div class="complete-bar" id="complete-progress" aria-hidden="true">
+            <span class="complete-bar-fill"></span>
+          </div>
+          <button class="cta-button" id="complete-home" type="button">처음으로</button>
+        </div>
+      </section>
+    </div>
+    <audio id="unlock-sound" preload="auto">
+      <source src="Unlock.wav" type="audio/wav" />
+      <source src="Unlock.caf" type="audio/x-caf" />
+    </audio>
+    <audio id="nod-sound" preload="auto">
+      <source src="Head%20Gestures%20Partial%20Nod.wav" type="audio/wav" />
+      <source src="Head%20Gestures%20Partial%20Nod.caf" type="audio/x-caf" />
+    </audio>
+    <audio id="delete-sound" src="Keyboard Delete.wav" preload="auto"></audio>
+    <audio id="locked-sound" preload="auto">
+      <source src="Screen%20Locked.wav" type="audio/wav" />
+      <source src="Screen%20Locked.caf" type="audio/x-caf" />
+    </audio>
+    <audio id="status-sound" preload="auto">
+      <source src="텍스트뜰때.wav" type="audio/wav" />
+    </audio>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
